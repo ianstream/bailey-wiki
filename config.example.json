@@ -1,0 +1,35 @@
+{
+  "language": "ko",
+  "llm": {
+    "model": "apac.amazon.nova-lite-v1:0",
+    "bedrock": {
+      "profile": "my-aws-profile",
+      "region": "us-east-1"
+    }
+  },
+  "sources": {
+    "include": [
+      "src/main",
+      "core/src/main",
+      "common/src/main"
+    ],
+    "exclude": [
+      "**/test/**",
+      "**/tests/**",
+      "**/__tests__/**",
+      "**/*.test.ts",
+      "**/*.test.kt",
+      "**/*.spec.ts",
+      "**/node_modules/**",
+      "**/build/**",
+      "**/dist/**",
+      "**/.gradle/**"
+    ],
+    "extensions": [".kt", ".java", ".ts", ".tsx", ".js"]
+  },
+  "wiki": {
+    "dir": "wiki",
+    "obsidian": true
+  },
+  "concurrency": 5
+}

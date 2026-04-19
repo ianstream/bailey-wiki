@@ -1,0 +1,32 @@
+{
+  "name": "bailey-wiki",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "LLM-powered code wiki generator with Obsidian graph support",
+  "bin": {
+    "bailey-wiki": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "test": "node --import tsx/esm --test test/utils/glob.test.ts test/source/parser.test.ts test/source/collector.test.ts test/wiki/collector.test.ts test/config/languages.test.ts test/state/backlinks.test.ts test/wiki/processor.test.ts test/lint/stale-path.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "wiki",
+    "llm",
+    "obsidian",
+    "code-documentation",
+    "graph"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.1031.0",
+    "@aws-sdk/credential-providers": "^3.1031.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
