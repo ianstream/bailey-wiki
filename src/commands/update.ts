@@ -39,9 +39,25 @@ export async function cmdUpdate(
     return !matchesGlob(rel, exclude);
   });
 
-  if (relevant.length === 0) {
+  // Find source files with no corresponding wiki (new files to generate)
+  const allSourceFiles = await collectSourceFiles(config);
+  const newFiles: string[] = [];
+  for (const sourceFile of allSourceFiles) {
+    const wikiFile = sourceToWikiPath(sourceFile, config.project, config.wiki.dir);
+    try {
+      await fs.access(wikiFile);
+    } catch {
+      newFiles.push(sourceFile);
+    }
+  }
+
+  if (newFiles.length > 0) {
+    log(`신규 위키 없는 파일 ${newFiles.length}개 감지`);
+  }
+
+  if (relevant.length === 0 && newFiles.length === 0) {
     log('No relevant source changes found.');
-    state.lastCommit = headCommit;
+    state.lastCommit = headCommit ?? fromCommit;
     await saveState(config, state);
     return;
   }
@@ -72,7 +88,7 @@ export async function cmdUpdate(
   );
   console.log();
 
-  let done = 0, skipped = 0, failed = 0;
+  let done = 0, skipped = 0, failed = 0, added = 0;
 
   for (let i = 0; i < relevant.length; i += config.concurrency) {
     const batch = relevant.slice(i, i + config.concurrency);
@@ -94,6 +110,34 @@ export async function cmdUpdate(
           done++;
           console.log();
           log(`${C.green('✓')} ${r.value.relPath}`);
+        }
+      } else {
+        failed++;
+        console.log();
+        err(`${path.relative(config.project, batch[j])}: ${(r.reason as Error)?.message}`);
+      }
+    }
+  }
+
+  // Generate wikis for new source files (no existing wiki)
+  for (let i = 0; i < newFiles.length; i += config.concurrency) {
+    const batch = newFiles.slice(i, i + config.concurrency);
+
+    process.stdout.write(
+      `\r${C.cyan(`[new ${i + 1}-${Math.min(i + batch.length, newFiles.length)}/${newFiles.length}]`)} ${C.dim(path.relative(config.project, batch[0]).slice(0, 60))}${''.padEnd(20)}`
+    );
+
+    const results = await Promise.allSettled(
+      batch.map((f) => processFile(f, config, { forceRegenerate: false }))
+    );
+
+    for (let j = 0; j < results.length; j++) {
+      const r = results[j];
+      if (r.status === 'fulfilled') {
+        if (r.value.status === 'ok') {
+          added++;
+          console.log();
+          log(`${C.green('✓')} [new] ${r.value.relPath}`);
         }
       } else {
         failed++;
@@ -143,6 +187,7 @@ export async function cmdUpdate(
   console.log();
   console.log(C.bold('  ── Update Complete ──'));
   console.log(`  Updated:   ${C.green(String(done))}`);
+  console.log(`  Added:     ${C.green(String(added))} (new)`);
   console.log(`  Skipped:   ${C.dim(String(skipped))} (unchanged)`);
   console.log(`  Failed:    ${failed > 0 ? C.red(String(failed)) : '0'}`);
   console.log(`  Last commit: ${C.dim(headCommit ? headCommit.slice(0, 8) : 'unknown')}`);
