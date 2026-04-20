@@ -32,6 +32,9 @@ export function cleanLLMResponse(result: string): string {
     return `${prefix as string}[${flat}]`;
   });
 
+  // Sync related field from Dependencies section wikilinks
+  cleaned = syncRelatedFromDependencies(cleaned);
+
   // Fix unclosed code fences
   const fenceCount = (cleaned.match(/^```/gm) ?? []).length;
   if (fenceCount % 2 !== 0) {
@@ -39,6 +42,29 @@ export function cleanLLMResponse(result: string): string {
   }
 
   return cleaned;
+}
+
+// Pure function — testable
+export function syncRelatedFromDependencies(wiki: string): string {
+  // Find Dependencies section (Korean: 의존성, English: Dependencies)
+  const depSectionMatch = wiki.match(
+    /^##\s+(?:의존성|Dependencies)\s*\n((?:(?!^##\s)[\s\S])*)/m
+  );
+  if (!depSectionMatch) return wiki;
+
+  // Extract all [[wikilinks]] from the Dependencies section
+  const depSection = depSectionMatch[1];
+  const links = [...depSection.matchAll(/\[\[([^\]|]+)\]\]/g)]
+    .map((m) => m[1].trim())
+    .filter((name) => name.length > 0);
+
+  if (links.length === 0) return wiki;
+
+  // Deduplicate
+  const unique = [...new Set(links)];
+
+  // Replace related: [...] in frontmatter
+  return wiki.replace(/^(related:\s*)\[.*?\]/m, `$1[${unique.join(', ')}]`);
 }
 
 export async function processFile(
