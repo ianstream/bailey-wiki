@@ -16,7 +16,8 @@ Automatically analyzes source code and generates Markdown wiki files with Obsidi
 - **Obsidian graph** — `[[wikilink]]` cross-references auto-build dependency graphs
 - **Real dependency parsing** — detects actual imports, not just file names
 - **Mermaid diagrams** — state machines, sequence flows, class relationships (auto-generated)
-- **Incremental updates** — `update` command uses `git diff` to process only changed files
+- **Incremental updates** — `update` regenerates changed files and auto-creates wikis for new source files
+- **Auto relation sync** — `related:` frontmatter field is automatically populated from Dependencies wikilinks
 - **Backlink index** — `update` auto-regenerates wikis that reference changed files via `[[wikilink]]`
 - **Wiki synthesis** — `synthesize` compiles entire wiki into `_index.md`, `_architecture.md`, `_contradictions.md`
 - **Wiki file cache** — unchanged files are skipped automatically (skips if wiki file already exists)
