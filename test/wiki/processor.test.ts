@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanLLMResponse } from '../../src/wiki/processor.js';
+import { cleanLLMResponse, syncRelatedFromDependencies } from '../../src/wiki/processor.js';
 
 describe('cleanLLMResponse', () => {
   test('strips ```markdown wrapper', () => {
@@ -49,5 +49,74 @@ describe('cleanLLMResponse', () => {
     assert.ok(!result.includes('[['));
     assert.ok(result.includes('OrderService'));
     assert.ok(result.includes('UserService'));
+  });
+});
+
+describe('syncRelatedFromDependencies', () => {
+  test('extracts wikilinks from Korean Dependencies section into related field', () => {
+    const input = [
+      '---',
+      'type: source',
+      'related: []',
+      '---',
+      '',
+      '## 의존성',
+      '',
+      '- [[UserService]] — 사용자 서비스',
+      '- [[OrderRepository]] — 주문 레포지토리',
+    ].join('\n');
+    const result = syncRelatedFromDependencies(input);
+    assert.ok(result.includes('related: [UserService, OrderRepository]'), `got: ${result}`);
+  });
+
+  test('extracts wikilinks from English Dependencies section', () => {
+    const input = [
+      '---',
+      'related: []',
+      '---',
+      '## Dependencies',
+      '- [[PaymentService]]',
+    ].join('\n');
+    const result = syncRelatedFromDependencies(input);
+    assert.ok(result.includes('related: [PaymentService]'), `got: ${result}`);
+  });
+
+  test('no-op when no wikilinks in Dependencies section', () => {
+    const input = [
+      '---',
+      'related: []',
+      '---',
+      '## 의존성',
+      '없음',
+    ].join('\n');
+    const result = syncRelatedFromDependencies(input);
+    assert.ok(result.includes('related: []'));
+  });
+
+  test('no-op when no Dependencies section exists', () => {
+    const input = [
+      '---',
+      'related: []',
+      '---',
+      '## 개요',
+      '내용',
+    ].join('\n');
+    const result = syncRelatedFromDependencies(input);
+    assert.equal(result, input);
+  });
+
+  test('deduplicates wikilinks', () => {
+    const input = [
+      '---',
+      'related: []',
+      '---',
+      '## Dependencies',
+      '- [[Foo]]',
+      '- [[Foo]]',
+      '- [[Bar]]',
+    ].join('\n');
+    const result = syncRelatedFromDependencies(input);
+    assert.ok(result.includes('related: [Foo, Bar]'), `got: ${result}`);
+    assert.equal((result.match(/Foo/g) ?? []).length, 3); // one in related, two in deps
   });
 });
