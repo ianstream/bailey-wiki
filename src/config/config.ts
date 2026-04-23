@@ -82,7 +82,7 @@ export async function loadConfig(
       dir: (fcWiki?.['dir'] as string | undefined) ?? 'wiki',
       obsidian: fcWiki?.['obsidian'] !== false,
     },
-    concurrency: overrides.concurrency ?? (parseInt(process.env['BAILEY_WIKI_CONCURRENCY'] ?? '0') || os.cpus().length),
+    concurrency: overrides.concurrency ?? (parseInt(process.env['BAILEY_WIKI_CONCURRENCY'] ?? '0') || (fc['concurrency'] as number | undefined) || os.cpus().length),
   };
 }
 
