@@ -31,7 +31,7 @@ export function chunkWikiFiles(wikiFiles: string[], maxTokensPerChunk = 70000): 
 
   for (const f of wikiFiles) {
     current.push(f);
-    currentTokens += 400; // rough avg tokens per wiki file
+    currentTokens += 1000; // rough avg tokens per wiki file (korean content ~1000 tokens)
     if (currentTokens >= maxTokensPerChunk) {
       chunks.push(current);
       current = [];
