@@ -25,11 +25,18 @@ export async function cmdSynthesize(config: BaileyWikiConfig): Promise<void> {
   log(`${chunks.length}개 청크로 분할하여 처리`);
 
   const allSummaries = [];
+  let completed = 0;
 
-  for (let i = 0; i < chunks.length; i++) {
-    process.stdout.write(`\r  청크 분석 중 [${i + 1}/${chunks.length}]...`);
-    const summaries = await summarizeChunk(chunks[i], i, chunks.length, config.llm);
-    allSummaries.push(...summaries);
+  for (let i = 0; i < chunks.length; i += config.concurrency) {
+    const batch = chunks.slice(i, i + config.concurrency);
+    const results = await Promise.all(
+      batch.map((chunk, j) => summarizeChunk(chunk, i + j, chunks.length, config.llm))
+    );
+    for (const summaries of results) {
+      allSummaries.push(...summaries);
+      completed++;
+      process.stdout.write(`\r  청크 분석 중 [${completed}/${chunks.length}]...`);
+    }
   }
   console.log();
 
